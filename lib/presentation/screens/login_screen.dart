@@ -1,15 +1,30 @@
+import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:maps_app/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
 import 'package:maps_app/presentation/widgets/phone_form_field.dart';
 
 import '../../constants/string_manager.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final _phoneFormKey = GlobalKey<FormState>();
+  TextEditingController controller = TextEditingController();
+  final countryPicker = const FlCountryCodePicker();
+  CountryCode? countryCode;
+
   Widget _buildIntroTexts(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
+
     final width = MediaQuery.sizeOf(context).width;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -36,14 +51,35 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _register(BuildContext context) async {
+    if (_phoneFormKey.currentState!.validate()) {
+      Navigator.pop(context);
+      _phoneFormKey.currentState!.save();
+      final phoneAuthCubit = context.read<PhoneAuthCubit>();
+      phoneAuthCubit.submitPhoneNumber(countryCode!.dialCode + controller.text);
+    } else {
+      Navigator.pop(context);
+      return;
+    }
+    final phoneAuthCubit = context.read<PhoneAuthCubit>();
+    phoneAuthCubit.submitPhoneNumber(countryCode!.dialCode + controller.text);
+  }
+
   Widget _buildnextButton(BuildContext context) {
     return Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
           onPressed: () {
             // TODO : Navigate to next screen
-            Navigator.pushNamed(context, OtpScreenRoute);
+            showProgressIndicator(context);
+            _register(context);
           },
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              minimumSize: Size(100, 50)),
           child: Text(
             "Next",
             style: TextStyle(
@@ -52,13 +88,50 @@ class LoginScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          style: ElevatedButton.styleFrom(
-              primary: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-              minimumSize: Size(100, 50)),
         ));
+  }
+
+  void showProgressIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(Colors.black),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPhoneNumberSubmittedBloc(String phoneNumber) {
+    return BlocListener<PhoneAuthCubit, PhoneAuthState>(
+      listenWhen: (previous, current) {
+        return previous != current; // lma el state byt8ayar
+      },
+      listener: (context, state) {
+        if (state is PhoneAuthLoading) {
+          showProgressIndicator(context);
+        }
+        if (state is PhoneNumberSubmitted) {
+          Navigator.pop(context);
+          Navigator.pushNamed(context, OtpScreenRoute,
+              arguments: countryCode!.dialCode + controller.text);
+        }
+        if (state is PhoneAuthFailure) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: Colors.black,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Container(),
+    );
   }
 
   @override
@@ -78,9 +151,18 @@ class LoginScreen extends StatelessWidget {
             children: [
               _buildIntroTexts(context),
               SizedBox(height: height * 0.125),
-              PhoneFormField(),
+              PhoneFormField(
+                countryCode: countryCode,
+                controller: controller,
+                onTap: () async {
+                  // TODO : Show country code picker
+                  final code = await countryPicker.showPicker(context: context);
+                  countryCode = code;
+                },
+              ),
               SizedBox(height: height * 0.07),
               _buildnextButton(context),
+              //_buildPhoneNumberSubmittedBloc(phoneNumber!),
             ],
           ),
         ),

@@ -7,6 +7,8 @@ import 'package:maps_app/constants/color_manager.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 class OtpScreen extends StatelessWidget {
+  OtpScreen({super.key, required this.phoneNumber});
+
   final _otpFormKey = GlobalKey<FormState>();
 
   String currentText = "";
@@ -14,7 +16,6 @@ class OtpScreen extends StatelessWidget {
   String? phoneNumber;
 
   String? pinCode;
-
 
   Widget _buildIntroTexts(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
@@ -141,6 +142,7 @@ class OtpScreen extends StatelessWidget {
     final height = MediaQuery.sizeOf(context).height;
     final width = MediaQuery.sizeOf(context).width;
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: Container(
         margin: EdgeInsets.only(

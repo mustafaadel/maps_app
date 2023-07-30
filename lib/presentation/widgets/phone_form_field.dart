@@ -2,19 +2,21 @@ import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:maps_app/constants/color_manager.dart';
+import 'package:maps_app/presentation/screens/login_screen.dart';
 
-class PhoneFormField extends StatefulWidget {
-  PhoneFormField({super.key});
-
-  @override
-  State<PhoneFormField> createState() => _PhoneFormFieldState();
-}
-
-class _PhoneFormFieldState extends State<PhoneFormField> {
-  String? phoneNumber;
-
-  final countryPicker = const FlCountryCodePicker();
+class PhoneFormField extends StatelessWidget {
+  static String? phoneNumber;
   CountryCode? countryCode;
+  final TextEditingController controller;
+  final VoidCallback onTap;
+
+  PhoneFormField({
+    Key? key,
+    required this.countryCode,
+    required this.controller,
+    required this.onTap,
+  }) : super(key: key);
+
   String generateCountryFlag(String cCode) {
     String countryCode = cCode;
     String flag = countryCode
@@ -39,18 +41,8 @@ class _PhoneFormFieldState extends State<PhoneFormField> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: MyColors.lightGrey),
             ),
-            // child: Text(generateCountryFlag() + ' +20' , style: TextStyle(
-            //   color: Colors.black,
-            //   fontSize: 16,
-            //   letterSpacing: 1,
-            // ),),
             child: GestureDetector(
-              onTap: () async {
-                final code = await countryPicker.showPicker(context: context);
-                setState(() {
-                  countryCode = code;
-                });
-              },
+              onTap: onTap,
               child: Row(
                 children: [
                   Container(
@@ -83,7 +75,7 @@ class _PhoneFormFieldState extends State<PhoneFormField> {
             ),
           ),
         ),
-        SizedBox(
+        const SizedBox(
           width: 16,
         ),
         Expanded(
@@ -100,6 +92,7 @@ class _PhoneFormFieldState extends State<PhoneFormField> {
                 //focusNode: FocusNode(),
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.done,
+                controller: controller,
                 style: TextStyle(
                   fontSize: 16.sp,
                   color: Colors.black,
@@ -118,12 +111,17 @@ class _PhoneFormFieldState extends State<PhoneFormField> {
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Please enter your phone number';
-                  } else if (value.length < 11) {
+                  } else if (value.length < 10) {
                     return 'Please enter a valid phone number';
                   }
                   return null;
                 },
-                onSaved: (newValue) => phoneNumber = newValue,
+                onSaved: (newValue) {
+                  phoneNumber = newValue;
+                },
+                onChanged: (value) {
+                  phoneNumber = value;
+                },
               )),
         )
       ],
