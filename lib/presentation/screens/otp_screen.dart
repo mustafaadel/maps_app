@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:maps_app/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
 import 'package:maps_app/constants/color_manager.dart';
+import 'package:maps_app/constants/string_manager.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 class OtpScreen extends StatelessWidget {
@@ -113,12 +116,18 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVerificationButton() {
+  void _login(BuildContext context) {
+    BlocProvider.of<PhoneAuthCubit>(context).submitOTP(pinCode!);
+  }
+
+  Widget _buildVerificationButton(BuildContext context) {
     return Align(
         alignment: Alignment.centerRight,
         child: ElevatedButton(
           onPressed: () {
             // TODO : Navigate to next screen
+            showProgressIndicator(context);
+            _login(context);
           },
           style: ElevatedButton.styleFrom(
               primary: Colors.black,
@@ -137,6 +146,37 @@ class OtpScreen extends StatelessWidget {
         ));
   }
 
+  void showProgressIndicator(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(Colors.black),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPhoneVerificationBloc() {
+    return BlocListener<PhoneAuthCubit, PhoneAuthState>(
+      listenWhen: (previous, current) {
+        return previous != current;
+      },
+      listener: (context, state) {
+        if (state is PhoneAuthLoading) {
+          showProgressIndicator(context);
+        }
+        if (state is PhoneOTPVerified) {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(context, MapScreenRoute);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
@@ -153,7 +193,8 @@ class OtpScreen extends StatelessWidget {
             SizedBox(height: height * 0.125),
             _buildPinCode(context),
             SizedBox(height: height * 0.07),
-            _buildVerificationButton(),
+            _buildVerificationButton(context),
+            _buildPhoneVerificationBloc()
           ],
         ),
       ),
