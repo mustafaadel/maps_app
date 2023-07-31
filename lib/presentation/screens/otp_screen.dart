@@ -1,58 +1,40 @@
-import 'dart:async';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:maps_app/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
-import 'package:maps_app/constants/color_manager.dart';
 import 'package:maps_app/constants/string_manager.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import '../../business_logic/cubit/phone_auth/phone_auth_cubit.dart';
+import '../../constants/color_manager.dart';
 
+// ignore: must_be_immutable
 class OtpScreen extends StatelessWidget {
-  OtpScreen({super.key, required this.phoneNumber});
+  final phoneNumber;
 
-  final _otpFormKey = GlobalKey<FormState>();
+  OtpScreen({Key? key, required this.phoneNumber}) : super(key: key);
 
-  String currentText = "";
+  String? otpCode;
 
-  String? phoneNumber;
-
-  String? pinCode;
-
-  Widget _buildIntroTexts(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height;
-    final width = MediaQuery.sizeOf(context).width;
+  Widget _buildIntroTexts() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Verify your phone number",
+          'Verify your phone number',
           style: TextStyle(
-              color: Colors.black,
-              fontSize: 24.sp,
-              fontWeight: FontWeight.bold),
+              color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         SizedBox(
-          height: height * 0.03,
+          height: 30,
         ),
         Container(
-          //margin: EdgeInsets.symmetric(horizontal: 2),
+          margin: EdgeInsets.symmetric(horizontal: 2),
           child: RichText(
             text: TextSpan(
-              text: "Please enter the 4-digit code sent to you at ",
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 16.sp,
-              ),
-              children: [
+              text: 'Enter your 6 digit code numbers sent to ',
+              style: TextStyle(color: Colors.black, fontSize: 18, height: 1.4),
+              children: <TextSpan>[
                 TextSpan(
                   text: '$phoneNumber',
-                  style: TextStyle(
-                    color: MyColors.blue,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: MyColors.blue),
                 ),
               ],
             ),
@@ -62,101 +44,86 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPinCode(BuildContext context) {
-    return Form(
-      key: _otpFormKey,
-      child: PinCodeTextField(
-        appContext: context,
-        autoDismissKeyboard: false,
-        obscureText: false,
-        length: 6,
-        autoFocus: true,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        obscuringCharacter: "*",
-        animationType: AnimationType.fade,
-        validator: (value) {
-          value!.length != 4 ? 'Please enter a valid code' : null;
-        },
-        pinTheme: PinTheme(
-          shape: PinCodeFieldShape.box,
-          borderRadius: BorderRadius.circular(6),
-          activeFillColor: MyColors.blue,
-          selectedColor: MyColors.blue,
-          inactiveColor: MyColors.lightGrey,
-          inactiveFillColor: MyColors.lightGrey,
-          selectedFillColor: MyColors.lightGrey,
-          disabledColor: MyColors.lightGrey,
-          activeColor: MyColors.blue,
-          borderWidth: 1,
-          fieldHeight: 60,
-          fieldWidth: 50,
-          //activeColor: hasError ? Colors.orange : Colors.white,
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
         ),
-        cursorColor: Colors.black,
-        animationDuration: const Duration(milliseconds: 300),
-        textStyle: TextStyle(fontSize: 18.sp, height: 1.5),
-        //backgroundColor: MyColors.lightGrey,
-        keyboardType: TextInputType.number,
-        boxShadows: const [
-          BoxShadow(
-            offset: Offset(0, 1),
-            color: Colors.black12,
-            blurRadius: 10,
-          )
-        ],
-        onCompleted: (v) {
-          // print("Completed");
-          //FocusScope.of(context).unfocus();
-          pinCode = v;
-        },
-        onChanged: (value) {
-          // print(value);
-        },
       ),
+    );
+
+    showDialog(
+      barrierColor: Colors.white.withOpacity(0),
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return alertDialog;
+      },
+    );
+  }
+
+  Widget _buildPinCodeFields(BuildContext context) {
+    return PinCodeTextField(
+      appContext: context,
+      autoFocus: true,
+      cursorColor: Colors.black,
+      keyboardType: TextInputType.number,
+      length: 6,
+      obscureText: false,
+      animationType: AnimationType.scale,
+      pinTheme: PinTheme(
+        shape: PinCodeFieldShape.box,
+        borderRadius: BorderRadius.circular(5),
+        fieldHeight: 50,
+        fieldWidth: 40,
+        borderWidth: 1,
+        activeColor: MyColors.blue,
+        inactiveColor: MyColors.blue,
+        inactiveFillColor: Colors.white,
+        activeFillColor: MyColors.lightBlue,
+        selectedColor: MyColors.blue,
+        selectedFillColor: Colors.white,
+      ),
+      animationDuration: const Duration(milliseconds: 300),
+      backgroundColor: Colors.white,
+      enableActiveFill: true,
+      onCompleted: (submitedCode) {
+        otpCode = submitedCode.toString();
+        print("Completed");
+      },
+      onChanged: (value) {
+        //otpCode = value;
+      },
     );
   }
 
   void _login(BuildContext context) {
-    BlocProvider.of<PhoneAuthCubit>(context).submitOTP(pinCode!);
+    BlocProvider.of<PhoneAuthCubit>(context).submitOTP(otpCode.toString());
   }
 
-  Widget _buildVerificationButton(BuildContext context) {
+  Widget _buildVrifyButton(BuildContext context) {
     return Align(
-        alignment: Alignment.centerRight,
-        child: ElevatedButton(
-          onPressed: () {
-            // TODO : Navigate to next screen
-            showProgressIndicator(context);
-            _login(context);
-          },
-          style: ElevatedButton.styleFrom(
-              primary: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-              minimumSize: const Size(100, 50)),
-          child: Text(
-            "Verify",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.bold,
-            ),
+      alignment: Alignment.centerRight,
+      child: ElevatedButton(
+        onPressed: () {
+          //showProgressIndicator(context);
+          _login(context);
+        },
+        child: Text(
+          'Verify',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(110, 50),
+          primary: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
           ),
-        ));
-  }
-
-  void showProgressIndicator(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(Colors.black),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -169,32 +136,46 @@ class OtpScreen extends StatelessWidget {
         if (state is PhoneAuthLoading) {
           showProgressIndicator(context);
         }
+
         if (state is PhoneOTPVerified) {
           Navigator.pop(context);
-          Navigator.pushReplacementNamed(context, MapScreenRoute);
+          Navigator.of(context).pushReplacementNamed(MapScreenRoute);
+        }
+
+        if (state is PhoneAuthFailure) {
+          Navigator.pop(context);
+          String errorMsg = (state).errorMessage;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.black,
+              duration: Duration(seconds: 3),
+            ),
+          );
         }
       },
+      child: Container(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height;
-    final width = MediaQuery.sizeOf(context).width;
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: Container(
-        margin: EdgeInsets.only(
-            left: width * 0.08, right: width * 0.08, top: height * 0.1),
+        margin: EdgeInsets.symmetric(horizontal: 32, vertical: 88),
         child: Column(
           children: [
-            _buildIntroTexts(context),
-            SizedBox(height: height * 0.125),
-            _buildPinCode(context),
-            SizedBox(height: height * 0.07),
-            _buildVerificationButton(context),
-            _buildPhoneVerificationBloc()
+            _buildIntroTexts(),
+            SizedBox(
+              height: 70,
+            ),
+            _buildPinCodeFields(context),
+            SizedBox(
+              height: 60,
+            ),
+            _buildVrifyButton(context),
+            _buildPhoneVerificationBloc(),
           ],
         ),
       ),

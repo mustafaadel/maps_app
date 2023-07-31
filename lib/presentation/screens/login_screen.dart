@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildPhoneNumberSubmittedBloc(String phoneNumber) {
+  Widget _buildPhoneNumberSubmittedBloc() {
     return BlocListener<PhoneAuthCubit, PhoneAuthState>(
       listenWhen: (previous, current) {
         return previous != current; // lma el state byt8ayar
@@ -115,12 +115,15 @@ class _LoginScreenState extends State<LoginScreen> {
           showProgressIndicator(context);
         }
         if (state is PhoneNumberSubmitted) {
+          print("submitted");
           Navigator.pop(context);
           Navigator.pushNamed(context, OtpScreenRoute,
               arguments: countryCode!.dialCode + controller.text);
         }
         if (state is PhoneAuthFailure) {
           Navigator.pop(context);
+          Navigator.pushNamed(context, OtpScreenRoute,
+              arguments: countryCode!.dialCode + controller.text);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage),
@@ -162,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: height * 0.07),
               _buildnextButton(context),
-              //_buildPhoneNumberSubmittedBloc(phoneNumber!),
+              _buildPhoneNumberSubmittedBloc(),
             ],
           ),
         ),

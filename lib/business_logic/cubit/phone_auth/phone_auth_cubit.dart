@@ -6,12 +6,12 @@ part 'phone_auth_state.dart';
 
 class PhoneAuthCubit extends Cubit<PhoneAuthState> {
   PhoneAuthCubit() : super(PhoneAuthInitial());
-  String? verificationId;
+  String verificationId = "";
 
   Future<void> submitPhoneNumber(String phoneNumber) async {
     emit(PhoneAuthLoading());
     await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
+        phoneNumber: '$phoneNumber',
         timeout: const Duration(seconds: 15),
         verificationCompleted: verificationCompleted,
         verificationFailed: verificationFailed,
@@ -29,26 +29,31 @@ class PhoneAuthCubit extends Cubit<PhoneAuthState> {
     emit(PhoneAuthFailure(errorMessage: error.toString()));
   }
 
-  void codeSent(String verificationId, int? forceResendingToken) {
+  void codeSent(String vId, int? forceResendingToken) {
+    print(vId);
+    this.verificationId = vId;
+    print(verificationId);
     print("codeSent : $verificationId");
-    this.verificationId = verificationId;
+
     emit(PhoneNumberSubmitted());
   }
 
   void codeAutoRetrievalTimeout(String verificationId) {
     print("codeAutoRetrievalTimeout : $verificationId");
-    this.verificationId = verificationId;
     emit(PhoneNumberSubmitted());
   }
 
   Future<void> submitOTP(String otp) async {
+    print("dakhel submit otp");
+    print(verificationId);
     PhoneAuthCredential phoneAuthCredential = PhoneAuthProvider.credential(
-        verificationId: verificationId!, smsCode: otp);
+        verificationId: verificationId, smsCode: otp);
     await signIn(phoneAuthCredential);
   }
 
   Future<void> signIn(PhoneAuthCredential phoneAuthCredential) async {
     emit(PhoneAuthLoading());
+    print("gowa el sign in");
     try {
       await FirebaseAuth.instance.signInWithCredential(phoneAuthCredential);
       emit(PhoneOTPVerified());
